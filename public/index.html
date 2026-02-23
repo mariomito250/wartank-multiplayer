@@ -2,56 +2,122 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Wartank Multiplayer</title>
-  <style>
-  body {
-    margin: 0;
-    background: #2b2b2b;
-    overflow: hidden;
-  }
-
-  canvas {
-    display: block;
-    background: #3a5f3a;
-  }
+<title>Wartank Clone 2D</title>
+<style>
+body {
+  margin: 0;
+  background: #222;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+#hud {
+  padding: 10px;
+  background: #111;
+}
+canvas {
+  display: block;
+  background: #4c8cff;
+}
 </style>
 </head>
 <body>
-<canvas id="game" width="800" height="500"></canvas>
 
-<script src="/socket.io/socket.io.js"></script>
+<div id="hud">
+Ângulo: <span id="angle">45</span>° |
+Força: <span id="power">20</span> |
+Vida: <span id="life">100</span>
+</div>
+
+<canvas id="game" width="900" height="450"></canvas>
+
 <script>
-const socket = io();
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let players = {};
-let x = 100, y = 100;
+let angle = 45;
+let power = 20;
+let life = 100;
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") y -= 5;
-  if (e.key === "ArrowDown") y += 5;
-  if (e.key === "ArrowLeft") x -= 5;
-  if (e.key === "ArrowRight") x += 5;
+const tank = {
+  x: 150,
+  y: 350,
+  w: 40,
+  h: 20
+};
 
-  socket.emit("move", { x, y });
-});
+let bullet = null;
+const gravity = 0.3;
 
-socket.on("state", data => {
-  players = data;
-});
+function drawTank() {
+  ctx.fillStyle = "#333";
+  ctx.fillRect(tank.x, tank.y, tank.w, tank.h);
+
+  // canhão
+  const rad = angle * Math.PI / 180;
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(tank.x + tank.w / 2, tank.y);
+  ctx.lineTo(
+    tank.x + tank.w / 2 + Math.cos(rad) * 30,
+    tank.y - Math.sin(rad) * 30
+  );
+  ctx.stroke();
+}
+
+function shoot() {
+  if (bullet) return;
+
+  const rad = angle * Math.PI / 180;
+  bullet = {
+    x: tank.x + tank.w / 2,
+    y: tank.y,
+    vx: Math.cos(rad) * power,
+    vy: -Math.sin(rad) * power
+  };
+}
+
+function updateBullet() {
+  if (!bullet) return;
+
+  bullet.vy += gravity;
+  bullet.x += bullet.vx;
+  bullet.y += bullet.vy;
+
+  ctx.beginPath();
+  ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "red";
+  ctx.fill();
+
+  if (bullet.y > canvas.height) bullet = null;
+}
+
+function drawGround() {
+  ctx.fillStyle = "#2ecc71";
+  ctx.fillRect(0, 370, canvas.width, 80);
+}
 
 function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (let id in players) {
-    ctx.fillStyle = "green";
-    ctx.fillRect(players[id].x, players[id].y, 30, 30);
-  }
-
+  drawGround();
+  drawTank();
+  updateBullet();
   requestAnimationFrame(loop);
 }
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") angle = Math.max(0, angle - 1);
+  if (e.key === "ArrowRight") angle = Math.min(180, angle + 1);
+  if (e.key === "ArrowUp") power = Math.min(50, power + 1);
+  if (e.key === "ArrowDown") power = Math.max(5, power - 1);
+  if (e.key === " ") shoot();
+
+  document.getElementById("angle").textContent = angle;
+  document.getElementById("power").textContent = power;
+});
+
 loop();
 </script>
+
 </body>
 </html>
