@@ -1,40 +1,28 @@
-const express = require("express");
+const express = require('express');
+const path = require('path');
+const session = require('express-session');
 const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, 'public')));
 
-let players = {};
+app.use(session({
+  secret: 'wartank-secret',
+  resave: false,
+  saveUninitialized: true
+}));
 
-io.on("connection", socket => {
-  console.log("Jogador entrou:", socket.id);
+app.get('/api/session', (req, res) => {
+  req.session.duc = 'ducnghia';
+  const decode = Buffer.from('ducnghia_game').toString('base64');
 
-  players[socket.id] = {
-    x: 100,
-    y: 100,
-    hp: 100
-  };
-
-  socket.on("move", data => {
-    if (players[socket.id]) {
-      players[socket.id].x = data.x;
-      players[socket.id].y = data.y;
-    }
-  });
-
-  socket.on("disconnect", () => {
-    delete players[socket.id];
-    console.log("Jogador saiu:", socket.id);
+  res.json({
+    user: req.session.duc,
+    decode
   });
 });
 
-setInterval(() => {
-  io.emit("state", players);
-}, 50);
-
-http.listen(PORT, () => {
-  console.log("Servidor rodando na porta", PORT);
+app.listen(PORT, () => {
+  console.log('Servidor rodando na porta ' + PORT);
 });
