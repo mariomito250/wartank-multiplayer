@@ -1,16 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Card Battle Online</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
 <h2 id="status">Procurando jogador...</h2>
+
+<div id="hp">
+  <p>Você: <span id="myHp">30</span> ❤️</p>
+  <p>Oponente: <span id="enemyHp">30</span> ❤️</p>
+</div>
+
 <button id="attack" disabled>Atacar</button>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="game.js"></script>
-</body>
-</html>
